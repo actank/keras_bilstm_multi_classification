@@ -37,12 +37,14 @@ def train():
     #        c_index.append(i)
     #tmp_y_train = Y_train[[c_index]]
     #tmp_train_pred = train_pred[[c_index]]
-    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_train,train_pred, labels=[1,2,3,4])
+    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_train,train_pred, labels=[0,1,2,3])
     for i in range(4):
-        print("svm train pr:%f %f" % (precision[i], recall[i]))
-    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_test, test_pred, labels=[1,2,3,4])
+        #print("svm train pr:%f %f" % (precision[i], recall[i]))
+        print("svm train f1:%f" % (2 * precision[i] * recall[i] / (precision[i] + recall[i] + 0.0001)))
+    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_test, test_pred, labels=[0,1,2,3])
     for i in range(4):
-        print("svm test pr:%f %f" % (precision[i], recall[i]))
+        #print("svm test pr:%f %f" % (precision[i], recall[i]))
+        print("svm test f1:%f" % (2 * precision[i] * recall[i] / (precision[i] + recall[i] + 0.0001)))
 
     lr_model = LogisticRegression(penalty='l2',
                                   tol=0.0001, 
@@ -62,10 +64,10 @@ def train():
     #        c_index.append(i)
     #tmp_y_train = Y_train[[c_index]]
     #tmp_train_pred = train_pred[[c_index]]
-    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_train,train_pred, labels=[1,2,3,4])
+    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_train,train_pred, labels=[0,1,2,3])
     for i in range(4):
         print("lr train pr:%f %f" % (precision[i], recall[i]))
-    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_test, test_pred, labels=[1,2,3,4])
+    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_test, test_pred, labels=[0,1,2,3])
     for i in range(4):
         print("lr test pr:%f %f" % (precision[i], recall[i]))
 
@@ -74,7 +76,7 @@ def train():
     joblib.dump(lr_model, "lr.model")
 
     all_pred = lr_model.predict(X)
-    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y,all_pred, labels=[1,2,3,4])
+    precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y,all_pred, labels=[0,1,2,3])
     for i in range(4):
         print("all pr:%f %f" % (precision[i], recall[i]))
 
@@ -85,11 +87,11 @@ def train():
     submit_pred = lr_model.predict(X_submit)
     with open("submit_data_index") as f, open("submit_result", "w") as f1:
         for pred in submit_pred:
-            if pred == 1.0:
+            if pred == 0:
                 pred = '春'
-            elif pred == 2.0:
+            elif pred == 1:
                 pred = '夏'
-            elif pred == 3.0:
+            elif pred == 2:
                 pred = '秋'
             else:
                 pred = '冬'
@@ -142,8 +144,8 @@ def train_lstm():
     sequence = Input(shape=(X_train.shape[1],), dtype='int32')
 
     embeded = Embedding(int(np.max(X_train))+1, 100, input_length=X_train.shape[1])(sequence)
-    forwards = LSTM(10, dropout=0.3, recurrent_dropout=0.2)(embeded)
-    backwards = LSTM(10, dropout=0.3, recurrent_dropout=0.2,go_backwards=True)(embeded)
+    forwards = LSTM(10, dropout=0.3, recurrent_dropout=0.1)(embeded)
+    backwards = LSTM(10, dropout=0.3, recurrent_dropout=0.1,go_backwards=True)(embeded)
     merged = concatenate([forwards, backwards], axis=-1)
     after_dp = Dropout(0.2)(merged)
     output = Dense(4, activation='softmax')(after_dp)
@@ -193,10 +195,13 @@ def train_lstm():
 
     precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_train,train_pred_label, labels=[0,1,2,3])
     for i in range(4):
-        print("lstm train pr:%f %f" % (precision[i], recall[i]))
+        #print("lstm train pr:%f %f" % (precision[i], recall[i]))
+        print("lstm train f1:%f" % (2 * precision[i] * recall[i] / (precision[i] + recall[i])))
     precision, recall, fscore, _ = metrics.precision_recall_fscore_support(Y_test, test_pred_label, labels=[0,1,2,3])
     for i in range(4):
-        print("lstm test pr:%f %f" % (precision[i], recall[i]))
+        #print("lstm test pr:%f %f" % (precision[i], recall[i]))
+        print("lstm test f1:%f" % (2 * precision[i] * recall[i] / (precision[i] + recall[i])))
+
     
     submit_data = np.genfromtxt('submit_lstm.data', delimiter=',', dtype=np.int32)
     X_submit = submit_data
